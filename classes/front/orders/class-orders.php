@@ -3,8 +3,8 @@
 /**
  * My account views
  *
- * @author  Matt Gates <http://mgates.me>
- * @package ProductVendor
+ * @author  Matt Gates <http://mgates.me>, WC Vendors <http://wcvendors.com>
+ * @package WCVendors
  */
 
 
@@ -17,49 +17,54 @@ class WCV_Orders
 	 */
 	function __construct()
 	{
-		$this->can_view_orders = WC_Vendors::$pv_options->get_option( 'can_show_orders' );
-		$this->can_export_csv  = WC_Vendors::$pv_options->get_option( 'can_export_csv' );
-		$this->can_view_emails = WC_Vendors::$pv_options->get_option( 'can_view_order_emails' );
+		$this->can_view_orders 	= wc_string_to_bool( get_option( 'wcvendors_capability_orders_enabled', 'no' ) );
+		$this->can_export_csv  	= wc_string_to_bool( get_option( 'wcvendors_capability_orders_export', 'no' ) );
+		$this->can_view_emails 	= wc_string_to_bool( get_option( 'wcvendors_capability_order_customer_email', 'no' ) );
+		$this->can_view_name 	= wc_string_to_bool( get_option( 'wcvendors_capability_order_customer_name', 'no' ) );
+		$this->can_view_address = wc_string_to_bool( get_option( 'wcvendors_capability_order_customer_shipping' ) );
 
 		add_action( 'template_redirect', array( $this, 'check_access' ) );
-		// add_action( 'wp', array( $this, 'display_shortcodes' ) );
-		// add_shortcode( 'wcv_orders', array( $this, 'display_product_orders' ) );
+		add_action( 'template_redirect', array( $this, 'process_export_orders' ) );
+		add_shortcode( 'wcv_orders', array( $this, 'display_product_orders' ) );
 	}
 
 
 	/**
 	 *
 	 */
-	public function check_access()
-	{
+	public function check_access() {
+		global $post;
 
-		$orders_page = WC_Vendors::$pv_options->get_option( 'orders_page' ); 
-		// Only if the orders page is set should we check access 
-		if ( $orders_page && is_page( $orders_page ) && !is_user_logged_in() ) {
-			wp_redirect( get_permalink( woocommerce_get_page_id( 'myaccount' ) ), 303 );
+		$orders_page = get_option( 'wcvendors_product_orders_page_id' );
+
+		// Only if the orders page is set should we check access
+		if ( $orders_page && is_page( $orders_page ) && is_a( $post, 'WP_Post' ) && has_shortcode( $post->post_content, 'wcv_orders' ) && ! is_user_logged_in() ) {
+			wp_redirect( get_permalink( wc_get_page_id( 'myaccount' ) ), 303 );
 			exit;
 		}
-		
-	} // check_access() 
+
+	} // check_access()
 
 
 	/**
+	 *  Processs export orders csv request
 	 *
+	 * @since 1.9.4
 	 */
-	public function display_shortcodes()
-	{
+	public function process_export_orders( ){
 
-		if ( is_page( WC_Vendors::$pv_options->get_option( 'orders_page' ) ) && $this->can_view_orders ) {
+		if ( empty( $_GET[ 'orders_for_product' ] ) ) {
 
-			wp_enqueue_script( 'jquery' );
+			return sprintf( __( 'You haven\'t selected a product\'s orders to view! Please go back to the %s Dashboard and click Show Orders on the product you\'d like to view.', 'wc-vendors' ), wcv_get_vendor_name() );
 
+		} else {
 			$this->product_id = !empty( $_GET[ 'orders_for_product' ] ) ? (int) $_GET[ 'orders_for_product' ] : false;
+
 			$products = array( $this->product_id );
 
-			$_product = get_product( $this->product_id );
-			
+			$_product = wc_get_product( $this->product_id );
 
-			if  ( is_object( $_product ) ) { 
+			if  ( is_object( $_product ) ) {
 
 				$children = $_product->get_children();
 
@@ -67,21 +72,20 @@ class WCV_Orders
 					$products = array_merge($products, $children);
 					$products = array_unique($products);
 				}
-			} 
-
-			$this->orders = WCV_Queries::get_orders_for_products( $products, array( 'vendor_id' => get_current_user_id() ) );
-
-			add_action( 'init', array( $this, 'verify_order_access' ) );
-			add_shortcode( 'wcv_orders', array( $this, 'display_product_orders' ) );
-
-			if ( $this->can_export_csv && !empty( $_POST[ 'export_orders' ] ) ) {
-				$this->download_csv();
 			}
 
+			$this->orders = WCV_Queries::get_orders_for_products( $products, array( 'vendor_id' => get_current_user_id() ) );
 		}
 
-	}
+		if ( !$this->orders ) {
+			return __( 'No orders.', 'wc-vendors' );
+		}
 
+		if ( $this->can_export_csv && !empty( $_POST[ 'export_orders' ] ) ) {
+				$this->download_csv();
+		}
+
+	}  // process_export_orders()
 
 	/**
 	 *
@@ -111,17 +115,36 @@ class WCV_Orders
 
 		if ( !WCV_Vendors::is_vendor( get_current_user_id() ) ) {
 			ob_start();
-			wc_get_template( 'denied.php', array(), 'wc-vendors/dashboard/', wcv_plugin_dir . 'templates/dashboard/' );
-
+				wc_get_template( 'denied.php', array(), 'wc-vendors/dashboard/', wcv_plugin_dir . 'templates/dashboard/' );
 			return ob_get_clean();
 		}
 
 		if ( empty( $_GET[ 'orders_for_product' ] ) ) {
-			return __( 'You haven\'t selected a product\'s orders to view! Please go back to the Vendor Dashboard and click Show Orders on the product you\'d like to view.', 'wcvendors' );
+
+			return sprintf( __( 'You haven\'t selected a product\'s orders to view! Please go back to the %s Dashboard and click Show Orders on the product you\'d like to view.', 'wc-vendors' ), wcv_get_vendor_name() );
+
+		} else {
+			$this->product_id = !empty( $_GET[ 'orders_for_product' ] ) ? (int) $_GET[ 'orders_for_product' ] : false;
+
+			$products = array( $this->product_id );
+
+			$_product = wc_get_product( $this->product_id );
+
+			if  ( is_object( $_product ) ) {
+
+				$children = $_product->get_children();
+
+				if ( !empty( $children ) ) {
+					$products = array_merge($products, $children);
+					$products = array_unique($products);
+				}
+			}
+
+			$this->orders = WCV_Queries::get_orders_for_products( $products, array( 'vendor_id' => get_current_user_id() ) );
 		}
 
 		if ( !$this->orders ) {
-			return __( 'No orders.', 'wcvendors' );
+			return __( 'No orders.', 'wc-vendors' );
 		}
 
 		if ( !empty( $_POST[ 'submit_comment' ] ) ) {
@@ -141,12 +164,12 @@ class WCV_Orders
 		wp_enqueue_style( 'pv_frontend_style', wcv_assets_url . 'css/wcv-frontend.css' );
 		wp_enqueue_script( 'pv_frontend_script', wcv_assets_url . 'js/front-orders.js' );
 
-		$providers 		= array(); 
-		$provider_array = array(); 
+		$providers 		= array();
+		$provider_array = array();
 
 		// WC Shipment Tracking Providers
 		if ( class_exists( 'WC_Shipment_Tracking' ) ) {
-			$WC_Shipment_Tracking 				= new WC_Shipment_Tracking(); 
+			$WC_Shipment_Tracking 				= new WC_Shipment_Tracking();
 			$providers 							= (method_exists($WC_Shipment_Tracking, 'get_providers')) ? $WC_Shipment_Tracking->get_providers() : $WC_Shipment_Tracking->providers;
 			$provider_array = array();
 			foreach ( $providers as $all_providers ) {
@@ -155,8 +178,6 @@ class WCV_Orders
 				}
 			}
 		}
-		
-		ob_start();
 
 		// Show the Export CSV button
 		if ( $this->can_export_csv ) {
@@ -169,11 +190,10 @@ class WCV_Orders
 													 'items'          => $all[ 'items' ],
 													 'product_id'     => $all[ 'product_id' ],
 													 'providers'      => $providers,
-													 'provider_array' => $provider_array, 
+													 'provider_array' => $provider_array,
 												), 'wc-vendors/orders/', wcv_plugin_dir . 'templates/orders/' );
 
-		return ob_get_clean();
-	}
+	} // display_product_orders()
 
 
 	/**
@@ -184,20 +204,32 @@ class WCV_Orders
 	public function get_headers()
 	{
 		$headers = array(
-			'order'   => __( 'Order', 'wcvendors' ),
-			'product' => __( 'Product Title', 'wcvendors' ),
-			'name'    => __( 'Full name', 'wcvendors' ),
-			'address' => __( 'Address', 'wcvendors' ),
-			'city'    => __( 'City', 'wcvendors' ),
-			'state'   => __( 'State', 'wcvendors' ),
-			'zip'     => __( 'Zip', 'wcvendors' ),
-			'email'   => __( 'Email address', 'wcvendors' ),
-			'date'    => __( 'Date', 'wcvendors' ),
+			'order'   => __( 'Order', 'wc-vendors' ),
+			'product' => __( 'Product Title', 'wc-vendors' ),
+			'name'    => __( 'Full name', 'wc-vendors' ),
+			'address' => __( 'Address', 'wc-vendors' ),
+			'city'    => __( 'City', 'wc-vendors' ),
+			'state'   => __( 'State', 'wc-vendors' ),
+			'zip'     => __( 'Zip', 'wc-vendors' ),
+			'email'   => __( 'Email address', 'wc-vendors' ),
+			'date'    => __( 'Date', 'wc-vendors' ),
 		);
 
 		if ( !$this->can_view_emails ) {
 			unset( $headers[ 'email' ] );
 		}
+
+		if ( !$this->can_view_name ) {
+			unset( $headers[ 'name' ] );
+		}
+
+		if ( !$this->can_view_address ) {
+			unset( $headers[ 'address' ] );
+			unset( $headers[ 'city' ] );
+			unset( $headers[ 'state' ] );
+			unset( $headers[ 'zip' ] );
+		}
+
 
 		return $headers;
 	}
@@ -214,26 +246,49 @@ class WCV_Orders
 	public function format_order_details( $orders, $product_id )
 	{
 		$body    = $items = array();
-		$product = get_product( $product_id )->get_title();
+		$product = wc_get_product( $product_id )->get_title();
 
 		foreach ( $orders as $i => $order ) {
-			$i          = $order->order_id;
-			$order      = new WC_Order ( $i );
+			$i          		= $order->order_id;
+			$order      		= wc_get_order( $i );
+			$order_date 		= $order->get_date_created();
+
+			$shipping_first_name = $order->get_shipping_first_name();
+			$shipping_last_name  = $order->get_shipping_last_name();
+			$shipping_address_1  = $order->get_shipping_address_1();
+			$shipping_city 		 = $order->get_shipping_city();
+			$shipping_country 	 = $order->get_shipping_country();
+			$shipping_state 	 = $order->get_shipping_state();
+			$shipping_postcode 	 = $order->get_shipping_postcode();
+			$billing_email 		 = $order->get_billing_email();
+			$customer_note 		 = $order->get_customer_note();
+
 			$body[ $i ] = array(
 				'order_number' => $order->get_order_number(),
 				'product'      => $product,
-				'name'         => $order->shipping_first_name . ' ' . $order->shipping_last_name,
-				'address'      => $order->shipping_address_1,
-				'city'         => $order->shipping_city,
-				'state'        => $order->shipping_state,
-				'zip'          => $order->shipping_postcode,
-				'email'        => $order->billing_email,
-				'date'         => $order->order_date,
-				'comments'     => wptexturize( $order->customer_note ),
+				'name'         => $shipping_first_name . ' ' . $shipping_last_name,
+				'address'      => $shipping_address_1,
+				'city'         => $shipping_city,
+				'state'        => $shipping_state,
+				'zip'          => $shipping_postcode,
+				'email'        => $billing_email,
+				'date'         => date_i18n( wc_date_format(), strtotime( $order_date ) ),
+				'comments'     => wptexturize( $customer_note ),
 			);
 
 			if ( !$this->can_view_emails ) {
 				unset( $body[ $i ][ 'email' ] );
+			}
+
+			if ( !$this->can_view_name ) {
+				unset( $body[ $i ][ 'name' ] );
+			}
+
+			if ( !$this->can_view_address ) {
+				unset( $body[ $i ][ 'address' ] );
+				unset( $body[ $i ][ 'city' ] );
+				unset( $body[ $i ][ 'state' ] );
+				unset( $body[ $i ][ 'zip' ] );
 			}
 
 			$items[ $i ][ 'total_qty' ] = 0;
@@ -269,5 +324,20 @@ class WCV_Orders
 			exit;
 		}
 	}
+
+	/**
+	 * Get the variation data for a product
+	 *
+	 * @since 1.9.4
+	 * @return string variation_data
+	 */
+	public static function get_variation_data( $item_id ){
+
+		$_var_product = new WC_Product_Variation(  $item_id );
+		$variation_data = $_var_product->get_variation_attributes();
+		$variation_detail = wc_get_formatted_variation( $variation_data, true );
+		return $variation_detail;
+
+	} // get_variation_data()
 
 }

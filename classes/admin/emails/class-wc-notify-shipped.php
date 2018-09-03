@@ -25,11 +25,11 @@ class WC_Email_Notify_Shipped extends WC_Email
 	function __construct()
 	{
 		$this->id          = 'vendor_notify_shipped';
-		$this->title       = __( 'Vendor has shipped', 'wcvendors' );
-		$this->description = __( 'An email is sent when a vendor has marked one of their orders as shipped.', 'wcvendors' );
+		$this->title       = sprintf( __( '%s has shipped - deprecated', 'wc-vendors' ), wcv_get_vendor_name() );
+		$this->description = __( 'An email is sent when a vendor has marked one of their orders as shipped. <strong>This email has been deprecated.</strong>', 'wc-vendors' );
 
-		$this->heading = __( 'Your order has been shipped', 'wcvendors' );
-		$this->subject = __( '[{blogname}] Your order has been shipped ({order_number}) - {order_date}', 'wcvendors' );
+		$this->heading = __( 'Your order has been shipped', 'wc-vendors' );
+		$this->subject = __( '[{blogname}] Your order has been shipped ({order_number}) - {order_date}', 'wc-vendors' );
 
 		$this->template_html  = 'notify-vendor-shipped.php';
 		$this->template_plain = 'notify-vendor-shipped.php';
@@ -50,20 +50,23 @@ class WC_Email_Notify_Shipped extends WC_Email
 	 */
 	function trigger( $order_id, $vendor_id )
 	{
-		$this->object = new WC_Order( $order_id );
+		$this->object = wc_get_order( $order_id );
 		$this->current_vendor = $vendor_id;
+		$order_date = $this->object->get_date_created();
 
 		$this->find[ ]    = '{order_date}';
-		$this->replace[ ] = date_i18n( woocommerce_date_format(), strtotime( $this->object->order_date ) );
+		$this->replace[ ] = date_i18n( wc_date_format(), strtotime( $order_date ) );
 
 		$this->find[ ]    = '{order_number}';
 		$this->replace[ ] = $this->object->get_order_number();
+
+		$billing_email 	  = $this->object->get_billing_email();
 
 		if ( !$this->is_enabled() ) return;
 
 		add_filter( 'woocommerce_order_get_items', array( $this, 'check_items' ), 10, 2 );
 		add_filter( 'woocommerce_get_order_item_totals', array( $this, 'check_order_totals' ), 10, 2 );
-		$this->send( $this->object->billing_email, $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
+		$this->send( $billing_email, $this->get_subject(), $this->get_content(), $this->get_headers(), $this->get_attachments() );
 		remove_filter( 'woocommerce_get_order_item_totals', array( $this, 'check_order_totals' ), 10, 2 );
 		remove_filter( 'woocommerce_order_get_items', array( $this, 'check_items' ), 10, 2 );
 	}
@@ -109,7 +112,7 @@ class WC_Email_Notify_Shipped extends WC_Email
 	public function check_order_totals( $total_rows, $order )
 	{
 		$return[ 'cart_subtotal' ]            = $total_rows[ 'cart_subtotal' ];
-		$return[ 'cart_subtotal' ][ 'label' ] = __( 'Subtotal:', 'wcvendors' );
+		$return[ 'cart_subtotal' ][ 'label' ] = __( 'Subtotal:', 'wc-vendors' );
 
 		return $return;
 	}
@@ -126,7 +129,7 @@ class WC_Email_Notify_Shipped extends WC_Email
 		wc_get_template( $this->template_html, array(
 															 'order'         => $this->object,
 															 'email_heading' => $this->get_heading()
-														), 'woocommerce', $this->template_base );
+														), 'woocommerce/emails', $this->template_base );
 
 		return ob_get_clean();
 	}
@@ -144,7 +147,7 @@ class WC_Email_Notify_Shipped extends WC_Email
 		wc_get_template( $this->template_plain, array(
 															  'order'         => $this->object,
 															  'email_heading' => $this->get_heading()
-														 ), 'woocommerce', $this->template_base );
+														 ), 'woocommerce/emails', $this->template_base );
 
 		return ob_get_clean();
 	}
@@ -160,35 +163,35 @@ class WC_Email_Notify_Shipped extends WC_Email
 	{
 		$this->form_fields = array(
 			'enabled'    => array(
-				'title'   => __( 'Enable/Disable', 'wcvendors' ),
+				'title'   => __( 'Enable/Disable', 'wc-vendors' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable this email notification', 'wcvendors' ),
-				'default' => 'yes'
+				'label'   => __( 'Enable this email notification', 'wc-vendors' ),
+				'default' => 'no'
 			),
 			'subject'    => array(
-				'title'       => __( 'Subject', 'wcvendors' ),
+				'title'       => __( 'Subject', 'wc-vendors' ),
 				'type'        => 'text',
-				'description' => sprintf( __( 'This controls the email subject line. Leave blank to use the default subject: <code>%s</code>.', 'wcvendors' ), $this->subject ),
+				'description' => sprintf( __( 'This controls the email subject line. Leave blank to use the default subject: <code>%s</code>.', 'wc-vendors' ), $this->subject ),
 				'placeholder' => '',
 				'default'     => ''
 			),
 			'heading'    => array(
-				'title'       => __( 'Email Heading', 'wcvendors' ),
+				'title'       => __( 'Email Heading', 'wc-vendors' ),
 				'type'        => 'text',
-				'description' => sprintf( __( 'This controls the main heading contained within the email notification. Leave blank to use the default heading: <code>%s</code>.', 'wcvendors' ), $this->heading ),
+				'description' => sprintf( __( 'This controls the main heading contained within the email notification. Leave blank to use the default heading: <code>%s</code>.', 'wc-vendors' ), $this->heading ),
 				'placeholder' => '',
 				'default'     => ''
 			),
 			'email_type' => array(
-				'title'       => __( 'Email type', 'wcvendors' ),
+				'title'       => __( 'Email type', 'wc-vendors' ),
 				'type'        => 'select',
-				'description' => __( 'Choose which format of email to send.', 'wcvendors' ),
+				'description' => __( 'Choose which format of email to send.', 'wc-vendors' ),
 				'default'     => 'html',
 				'class'       => 'email_type',
 				'options'     => array(
-					'plain'     => __( 'Plain text', 'wcvendors' ),
-					'html'      => __( 'HTML', 'wcvendors' ),
-					'multipart' => __( 'Multipart', 'wcvendors' ),
+					'plain'     => __( 'Plain text', 'wc-vendors' ),
+					'html'      => __( 'HTML', 'wc-vendors' ),
+					'multipart' => __( 'Multipart', 'wc-vendors' ),
 				)
 			)
 		);

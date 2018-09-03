@@ -31,7 +31,7 @@ class WCV_Post_types {
 			'shop_order_vendor',
 			apply_filters( 'woocommerce_register_post_type_shop_order_vendor',
 				array(
-					'label'                            => __( 'Vendor Orders', 'woocommerce' ),
+					'label'                            => sprintf( __( '%s Orders', 'wc-vendors' ), wcv_get_vendor_name() ),
 					'capability_type'                  => 'shop_order',
 					'public'                           => false,
 					'hierarchical'                     => false,
@@ -40,7 +40,7 @@ class WCV_Post_types {
 					'add_order_meta_boxes'             => false,
 					'exclude_from_order_count'         => true,
 					'exclude_from_order_views'         => false,
-					'exclude_from_order_reports'       => false,
+					'exclude_from_order_reports'       => true,
 					'exclude_from_order_sales_reports' => true,
 					'class_name'                       => 'WC_Order_Vendor'
 				)

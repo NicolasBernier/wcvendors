@@ -38,41 +38,36 @@ class WCV_Admin_Reports
 	function reports_tab( $reports )
 	{
 		$reports[ 'vendors' ] = array(
-			'title'  => __( 'WC Vendors', 'wcvendors' ),
+			'title'  => __( 'WC Vendors', 'wc-vendors' ),
 			'charts' => array(
 				array(
-					'title'       => __( 'Overview', 'wcvendors' ),
+					'title'       => __( 'Overview', 'wc-vendors' ),
 					'description' => '',
 					'hide_title'  => true,
 					'function'    => array( $this, 'sales' ),
 				),
 				array(
-					'title'       => __( 'Commission by vendor', 'wcvendors' ),
+					'title'       => __( 'Commission by vendor', 'wc-vendors' ),
 					'description' => '',
 					'hide_title'  => true,
 					'function'    => array( $this, 'commission' ),
 				),
 				array(
-					'title'       => __( 'Commission by product', 'wcvendors' ),
+					'title'       => __( 'Commission by product', 'wc-vendors' ),
 					'description' => '',
 					'hide_title'  => true,
 					'function'    => array( $this, 'commission' ),
 				),
 				array(
-					'title'       => __( 'Commission Totals', 'wcvendors' ),
-					'description' => __( 'Commission totals for all vendors includes shipping and taxes. By default no date range is used and all due commissions are returned. Use the date range to filter.', 'wcvendors' ),
+					'title'       => __( 'Commission Totals', 'wc-vendors' ),
+					'description' => __( 'Commission totals for all vendors includes shipping and taxes. By default no date range is used and all due commissions are returned. Use the date range to filter.', 'wc-vendors' ),
 					'hide_title'  => true,
 					'function'    => array( $this, 'commission_totals' ),
 				),
 			),
 		);
 
-		return $reports;
-	}
-
-	public function products()
-	{
-		# code...
+		return apply_filters( 'wcvendors_admin_reports_tab', $reports );
 	}
 
 
@@ -81,7 +76,10 @@ class WCV_Admin_Reports
 	 */
 	function sales()
 	{
+
 		global $start_date, $end_date, $woocommerce, $wpdb;
+
+		$commission_status_labels = WCV_Commission::commission_status();
 
 		$start_date = !empty( $_POST[ 'start_date' ] ) ? $_POST[ 'start_date' ] : strtotime( date( 'Ymd', strtotime( date( 'Ym', current_time( 'timestamp' ) ) . '01' ) ) );
 		$end_date   = !empty( $_POST[ 'end_date' ] ) ? $_POST[ 'end_date' ] : strtotime( date( 'Ymd', current_time( 'timestamp' ) ) );
@@ -118,41 +116,41 @@ class WCV_Admin_Reports
 		?>
 
 		<form method="post" action="">
-			<p><label for="from"><?php _e( 'From:', 'wcvendors' ); ?></label> 
+			<p><label for="from"><?php _e( 'From:', 'wc-vendors' ); ?></label>
 			<input type="text" size="9" placeholder="yyyy-mm-dd" value="<?php echo esc_attr( date( 'Y-m-d', $start_date ) ); ?>" name="start_date" class="range_datepicker from" id="from" />
-			<label for="to"><?php _e( 'To:', 'wcvendors' ); ?></label> 
+			<label for="to"><?php _e( 'To:', 'wc-vendors' ); ?></label>
 			<input type="text" size="9" placeholder="yyyy-mm-dd" value="<?php echo esc_attr( date( 'Y-m-d', $end_date ) ); ?>" name="end_date" class="range_datepicker to" id="to" />
-			<input type="submit" class="button" value="<?php _e( 'Show', 'wcvendors' ); ?>"/></p>
+			<input type="submit" class="button" value="<?php _e( 'Show', 'wc-vendors' ); ?>"/></p>
 		</form>
 
 		<div id="poststuff" class="woocommerce-reports-wrap">
 			<div class="woocommerce-reports-sidebar">
 				<div class="postbox">
-					<h3><span><?php _e( 'Total paid in range', 'wcvendors' ); ?></span></h3>
+					<h3><span><?php _e( 'Total paid in range', 'wc-vendors' ); ?></span></h3>
 
 					<div class="inside">
-						<p class="stat"><?php if ( $paid > 0 ) echo woocommerce_price( $paid ); else _e( 'n/a', 'wcvendors' ); ?></p>
+						<p class="stat"><?php if ( $paid > 0 ) echo wc_price( $paid ); else _e( 'n/a', 'wc-vendors' ); ?></p>
 					</div>
 				</div>
 				<div class="postbox">
-					<h3><span><?php _e( 'Total due in range', 'wcvendors' ); ?></span></h3>
+					<h3><span><?php _e( 'Total due in range', 'wc-vendors' ); ?></span></h3>
 
 					<div class="inside">
-						<p class="stat"><?php if ( $commission_due > 0 ) echo woocommerce_price( $commission_due ); else _e( 'n/a', 'wcvendors' ); ?></p>
+						<p class="stat"><?php if ( $commission_due > 0 ) echo wc_price( $commission_due ); else _e( 'n/a', 'wc-vendors' ); ?></p>
 					</div>
 				</div>
 				<div class="postbox">
-					<h3><span><?php _e( 'Total reversed in range', 'wcvendors' ); ?></span></h3>
+					<h3><span><?php _e( 'Total reversed in range', 'wc-vendors' ); ?></span></h3>
 
 					<div class="inside">
-						<p class="stat"><?php if ( $reversed > 0 ) echo woocommerce_price( $reversed ); else _e( 'n/a', 'wcvendors' ); ?></p>
+						<p class="stat"><?php if ( $reversed > 0 ) echo wc_price( $reversed ); else _e( 'n/a', 'wc-vendors' ); ?></p>
 					</div>
 				</div>
 			</div>
 
 			<div class="woocommerce-reports-main">
 				<div class="postbox">
-					<h3><span><?php _e( 'Recent Commission', 'wcvendors' ); ?></span></h3>
+					<h3><span><?php _e( 'Recent Commission', 'wc-vendors' ); ?></span></h3>
 
 					<div>
 						<?php
@@ -170,12 +168,12 @@ class WCV_Admin_Reports
 								<table id="commission-table" class="woocommerce_order_items" cellspacing="0">
 									<thead>
 									<tr>
-										<th><?php _e( 'Order', 'wcvendors' ) ?></th>
-										<th><?php _e( 'Product', 'wcvendors' ) ?></th>
-										<th><?php _e( 'Vendor', 'wcvendors' ) ?></th>
-										<th><?php _e( 'Total', 'wcvendors' ) ?></th>
-										<th><?php _e( 'Date &amp; Time', 'wcvendors' ) ?></th>
-										<th><?php _e( 'Status', 'wcvendors' ) ?></th>
+										<th><?php _e( 'Order', 'wc-vendors' ) ?></th>
+										<th><?php _e( 'Product', 'wc-vendors' ) ?></th>
+										<th><?php printf( __( '%s', 'wc-vendors' ), wcv_get_vendor_name() ); ?></th>
+										<th><?php _e( 'Total', 'wc-vendors' ) ?></th>
+										<th><?php _e( 'Date &amp; Time', 'wc-vendors' ) ?></th>
+										<th><?php _e( 'Status', 'wc-vendors' ) ?></th>
 									</tr>
 									</thead>
 									<tbody>
@@ -183,13 +181,13 @@ class WCV_Admin_Reports
 									foreach ( $commission as $row ) : $i++ ?>
 										<tr<?php if ( $i % 2 == 1 ) echo ' class="alternate"' ?>>
 											<td><?php if ( $row->order_id ) : ?><a
-													href="<?php echo admin_url( 'post.php?post=' . $row->order_id . '&action=edit' ); ?>"><?php echo $row->order_id; ?></a><?php else : _e( 'N/A', 'wcvendors' ); endif; ?>
+													href="<?php echo admin_url( 'post.php?post=' . $row->order_id . '&action=edit' ); ?>"><?php echo $row->order_id; ?></a><?php else : _e( 'N/A', 'wc-vendors' ); endif; ?>
 											</td>
 											<td><?php echo get_the_title( $row->product_id ); ?></td>
 											<td><?php echo WCV_Vendors::get_vendor_shop_name( $row->vendor_id ); ?></td>
-											<td><?php echo woocommerce_price( $row->total_due + $row->total_shipping + $row->tax ) ?></td>
-											<td><?php echo date( __( 'D j M Y \a\t h:ia', 'wcvendors' ), strtotime( $row->time ) ) ?></td>
-											<td><?php echo $row->status ?></td>
+											<td><?php echo wc_price( $row->total_due + $row->total_shipping + $row->tax ) ?></td>
+											<td><?php echo date_i18n( __( 'D j M Y \a\t h:ia', 'wc-vendors' ), strtotime( $row->time ) ) ?></td>
+											<td><?php echo $commission_status_labels[ $row->status ]; ?></td>
 										</tr>
 									<?php endforeach; ?>
 									</tbody>
@@ -197,7 +195,7 @@ class WCV_Admin_Reports
 							</div>
 						<?php
 						} else {
-							?><p><?php _e( 'No commission yet', 'wcvendors' ) ?></p><?php
+							?><p><?php _e( 'No commission yet', 'wc-vendors' ) ?></p><?php
 						}
 						?>
 					</div>
@@ -216,7 +214,7 @@ class WCV_Admin_Reports
 	{
 		global $start_date, $end_date, $woocommerce, $wpdb;
 
-		$latest_woo = version_compare( $woocommerce->version, '2.3', '>' ); 
+		$latest_woo = version_compare( $woocommerce->version, '2.3', '>' );
 
 		$first_year   = $wpdb->get_var( "SELECT time FROM {$wpdb->prefix}pv_commission ORDER BY time ASC LIMIT 1;" );
 		$first_year   = $first_year ? date( 'Y', strtotime( $first_year ) ) : date( 'Y' );
@@ -231,19 +229,21 @@ class WCV_Admin_Reports
 		?>
 
 		<form method="post" action="" class="report_filters">
-			<label for="show_year"><?php _e( 'Show:', 'wcvendors' ); ?></label>
+			<label for="show_year"><?php _e( 'Show:', 'wc-vendors' ); ?></label>
 			<select name="show_year" id="show_year">
 				<?php
 				for ( $i = $first_year; $i <= date( 'Y' ); $i++ )
 					printf( '<option value="%s" %s>%s</option>', $i, selected( $current_year, $i, false ), $i );
 				?>
 			</select>
-			<?php if ( $_GET[ 'report' ] == 2 ) { 
-					if ($latest_woo) { ?>		
-						<input type="hidden" class="wc-product-search" style="width:203px;" name="product_ids[]" data-placeholder="<?php _e( 'Search for a product&hellip;', 'woocommerce' ); ?>" data-action="woocommerce_json_search_products_and_variations" />
+			<?php if ( $_GET[ 'report' ] == 2 ) {
+					if ($latest_woo) { ?>
+						<select id="product_ids" name="product_ids[]" class="wc-product-search ajax_chosen_select_products" multiple="multiple"
+						data-placeholder="<?php _e( 'Type in a product name to start searching...', 'wc-vendors' ); ?>"
+						style="width: 400px;"></select>
 			<?php } else { ?>
 						<select id="product_ids" name="product_ids[]" class="ajax_chosen_select_products" multiple="multiple"
-						data-placeholder="<?php _e( 'Type in a product name to start searching...', 'wcvendors' ); ?>"
+						data-placeholder="<?php _e( 'Type in a product name to start searching...', 'wc-vendors' ); ?>"
 						style="width: 400px;"></select>
 					<script type="text/javascript">
 						jQuery(function () {
@@ -275,12 +275,12 @@ class WCV_Admin_Reports
 				<?php }
 			} else { ?>
 				<select class="chosen_select" id="show_vendor" name="show_vendor" style="width: 300px;"
-						data-placeholder="<?php _e( 'Select a vendor&hellip;', 'wcvendors' ); ?>">
+						data-placeholder="<?php echo sprintf( __( 'Select a %s&hellip;', 'wc-vendors' ), wcv_get_vendor_name() ); ?>">
 					<option></option>
 					<?php foreach ( $vendors as $key => $vendor ) printf( '<option value="%s" %s>%s</option>', $vendor->ID, selected( $selected_vendor, $vendor->ID, false ), $vendor->display_name ); ?>
 				</select>
 			<?php } ?>
-			<input type="submit" class="button" value="<?php _e( 'Show', 'wcvendors' ); ?>"/>
+			<input type="submit" class="button" value="<?php _e( 'Show', 'wc-vendors' ); ?>"/>
 		</form>
 
 		<?php
@@ -288,7 +288,7 @@ class WCV_Admin_Reports
 		if ( !empty( $selected_vendor ) || !empty( $products ) ) {
 
 			foreach ($products as $key => $product_id) {
-				$_product = get_product($product_id);
+				$_product = wc_get_product($product_id);
 				$childs = $_product->get_children();
 				$products = array_merge($childs, $products);
 			}
@@ -341,13 +341,13 @@ class WCV_Admin_Reports
 				<table class="widefat">
 					<thead>
 					<tr>
-						<th><?php _e( 'Month', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Commission Totals', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Tax', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Shipping', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Reversed', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Paid', 'wcvendors' ); ?></th>
-						<th class="total_row"><?php _e( 'Due', 'wcvendors' ); ?></th>
+						<th><?php _e( 'Month', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Commission Totals', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Tax', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Shipping', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Reversed', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Paid', 'wc-vendors' ); ?></th>
+						<th class="total_row"><?php _e( 'Due', 'wc-vendors' ); ?></th>
 					</tr>
 					</thead>
 					<tfoot>
@@ -371,10 +371,10 @@ class WCV_Admin_Reports
 							$total[ 'total' ] += $commission[ 'total' ];
 						}
 
-						echo '<td>' . __( 'Total', 'wcvendors' ) . '</td>';
+						echo '<td>' . __( 'Total', 'wc-vendors' ) . '</td>';
 
 						foreach ( $total as $value ) {
-							echo '<td class="total_row">' . woocommerce_price( $value ) . '</td>';
+							echo '<td class="total_row">' . wc_price( $value ) . '</td>';
 						}
 						?>
 					</tr>
@@ -387,7 +387,7 @@ class WCV_Admin_Reports
 						echo '<tr class="' . $alt . '"><td>' . $month . '</td>';
 
 						foreach ( $commission as $value ) {
-							echo '<td class="total_row">' . woocommerce_price( $value ) . '</td>';
+							echo '<td class="total_row">' . wc_price( $value ) . '</td>';
 						}
 
 						echo '</tr>';
@@ -404,22 +404,22 @@ class WCV_Admin_Reports
 
 
 	/**
-	 *  Commission Totals for vendors reports 
+	 *  Commission Totals for vendors reports
 	 *
 	 * @since    1.8.4
 	 */
-	function commission_totals(){ 
+	function commission_totals(){
 
-		global $wpdb; 
+		global $wpdb;
 
 		$total_start_date 	= !empty( $_POST[ 'total_start_date' ] ) ? $_POST[ 'total_start_date' ] : strtotime( date( 'Ymd', strtotime( date( 'Ym', current_time( 'timestamp' ) ) . '01' ) ) );
 		$total_end_date  	= !empty( $_POST[ 'total_end_date' ] ) ? $_POST[ 'total_end_date' ] : strtotime( date( 'Ymd', current_time( 'timestamp' ) ) );
 		$commission_status  = !empty( $_POST[ 'commission_status' ] ) ? $_POST[ 'commission_status' ] : 'due';
-		$date_sql = ( !empty( $_POST[ 'total_start_date' ] ) && !empty( $_POST[ 'total_end_date' ] ) ) ? " time BETWEEN '$total_start_date 00:00:00' AND '$total_end_date 23:59:59' AND" : ""; 
+		$date_sql = ( !empty( $_POST[ 'total_start_date' ] ) && !empty( $_POST[ 'total_end_date' ] ) ) ? " time BETWEEN '$total_start_date 00:00:00' AND '$total_end_date 23:59:59' AND" : "";
 
-		$status_sql = " status='$commission_status'"; 
+		$status_sql = " status='$commission_status'";
 
-		$sql = "SELECT vendor_id, total_due, total_shipping, tax, status FROM {$wpdb->prefix}pv_commission WHERE"; 
+		$sql = "SELECT vendor_id, total_due, total_shipping, tax, status FROM {$wpdb->prefix}pv_commission WHERE";
 
 		$commissions = $wpdb->get_results( $sql . $date_sql . $status_sql );
 
@@ -431,21 +431,21 @@ class WCV_Admin_Reports
 			$total_end_date = strtotime( $_POST[ 'total_end_date' ] );
 		}
 
-		$totals = $this->calculate_totals( $commissions ); 
+		$totals = $this->calculate_totals( $commissions );
 
 		?><form method="post" action="">
-			<p><label for="from"><?php _e( 'From:', 'wcvendors' ); ?></label> 
+			<p><label for="from"><?php _e( 'From:', 'wc-vendors' ); ?></label>
 			<input type="text" size="9" placeholder="yyyy-mm-dd" value="<?php echo esc_attr( date( 'Y-m-d', $total_start_date ) ); ?>" name="total_start_date" class="range_datepicker from" id="from" />
-			<label for="to"><?php _e( 'To:', 'wcvendors' ); ?></label> 
+			<label for="to"><?php _e( 'To:', 'wc-vendors' ); ?></label>
 			<input type="text" size="9" placeholder="yyyy-mm-dd" value="<?php echo esc_attr( date( 'Y-m-d', $total_end_date ) ); ?>" name="total_end_date" class="range_datepicker to" id="to" />
-			
+
 			<select name="commission_status">
-				<option value="due"><?php _e( 'Due', 'wcvendors' ); ?></option>
-				<option value="paid"><?php _e( 'Paid', 'wcvendors' ); ?></option>
-				<option value="reversed"><?php _e( 'Reversed', 'wcvendors' ); ?></option>
+				<option value="due"><?php _e( 'Due', 'wc-vendors' ); ?></option>
+				<option value="paid"><?php _e( 'Paid', 'wc-vendors' ); ?></option>
+				<option value="reversed"><?php _e( 'Reversed', 'wc-vendors' ); ?></option>
 			</select>
 
-			<input type="submit" class="button" value="<?php _e( 'Show', 'wcvendors' ); ?>"/>
+			<input type="submit" class="button" value="<?php _e( 'Show', 'wc-vendors' ); ?>"/>
 
 			<?php do_action( 'wcvendors_after_commission_reports', $commissions ); ?>
 			</p>
@@ -455,92 +455,92 @@ class WCV_Admin_Reports
 				<table class="widefat">
 					<thead>
 						<tr>
-							<th class="total_row"><?php _e( 'Vendor', 'wcvendors' ); ?></th>
-							<th class="total_row"><?php _e( 'Tax Total', 'wcvendors' ); ?></th>
-							<th class="total_row"><?php _e( 'Shipping Total', 'wcvendors' ); ?></th>
-							<th class="total_row"><?php _e( 'Status', 'wcvendors' ); ?></th>
-							<th class="total_row"><?php _e( 'Commission Total', 'wcvendors' ); ?></th>
+							<th class="total_row"><?php printf( __( '%s', 'wc-vendors' ),wcv_get_vendor_name() ); ?></th>
+							<th class="total_row"><?php _e( 'Tax Total', 'wc-vendors' ); ?></th>
+							<th class="total_row"><?php _e( 'Shipping Total', 'wc-vendors' ); ?></th>
+							<th class="total_row"><?php _e( 'Status', 'wc-vendors' ); ?></th>
+							<th class="total_row"><?php _e( 'Commission Total', 'wc-vendors' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
-					<?php 
+					<?php
 
-					if ( !empty( $commissions ) ){ 
+					if ( !empty( $commissions ) ){
 
 						foreach ( $totals as $totals ) {
 
-							echo '<tr>'; 
-							echo '<td>' . $totals[ 'user_login' ]. '</td>'; 
-							echo '<td>' . woocommerce_price( $totals[ 'tax' ] ). '</td>'; 
-							echo '<td>' . woocommerce_price( $totals[ 'total_shipping' ] ). '</td>'; 
-							echo '<td>' . $totals[ 'status' ] . '</td>'; 
-							echo '<td>' . woocommerce_price( $totals[ 'total_due' ] ). '</td>'; 
-							echo '</tr>'; 						
-						
+							echo '<tr>';
+							echo '<td>' . $totals[ 'user_login' ]. '</td>';
+							echo '<td>' . wc_price( $totals[ 'tax' ] ). '</td>';
+							echo '<td>' . wc_price( $totals[ 'total_shipping' ] ). '</td>';
+							echo '<td>' . $totals[ 'status' ] . '</td>';
+							echo '<td>' . wc_price( $totals[ 'total_due' ] ). '</td>';
+							echo '</tr>';
+
 						}
 
-					} else { 
-						echo '<tr>'; 
-						echo '<td colspan="5">'. __( 'No commissions found.', 'wcvendors' ) . '</td>'; 
-						echo '</tr>'; 						
+					} else {
+						echo '<tr>';
+						echo '<td colspan="5">'. __( 'No commissions found.', 'wc-vendors' ) . '</td>';
+						echo '</tr>';
 
 					}
 					?>
 					</tbody>
 				</table>
 
-		<?php 
+		<?php
 
 
-	} // commission_totals() 
+	} // commission_totals()
 
 	/**
-	 *   Calculate the totals of the commissions return an array with vendor id as the key with the totals 
-	 * 
-	 *   @param    array $commissions  total commissions array 
+	 *   Calculate the totals of the commissions return an array with vendor id as the key with the totals
+	 *
+	 *   @param    array $commissions  total commissions array
 	 *   @return   array $totals   	calculated totals
 	 */
-	function calculate_totals( $commissions ){ 
+	function calculate_totals( $commissions ){
 
-		$totals = array(); 
+		$totals = array();
 
 		$vendors         	= get_users( array( 'role' => 'vendor', 'fields' => array( 'ID', 'user_login' ) ) );
-		$vendor_names 		= wp_list_pluck( $vendors, 'user_login', 'ID' ); 
-	
-		foreach ($commissions as $commission ) { 
+		$vendor_names 		= wp_list_pluck( $vendors, 'user_login', 'ID' );
 
-			if ( array_key_exists( $commission->vendor_id, $totals ) ){ 
+		foreach ($commissions as $commission ) {
 
-				$totals[ $commission->vendor_id ][ 'total_due' ] 		+= $commission->total_due + $commission->tax + $commission->total_shipping; 
-				$totals[ $commission->vendor_id ][ 'tax' ] 				+= $commission->tax;  
-				$totals[ $commission->vendor_id ][ 'total_shipping' ]	+= $commission->total_shipping; 
+			if ( array_key_exists( $commission->vendor_id, $totals ) ){
 
-			} else { 
+				$totals[ $commission->vendor_id ][ 'total_due' ] 		+= $commission->total_due + $commission->tax + $commission->total_shipping;
+				$totals[ $commission->vendor_id ][ 'tax' ] 				+= $commission->tax;
+				$totals[ $commission->vendor_id ][ 'total_shipping' ]	+= $commission->total_shipping;
 
-				if ( array_key_exists( $commission->vendor_id, $vendor_names) ){ 
+			} else {
 
-					$temp_array = array( 
-						'user_login' 		=> $vendor_names[ $commission->vendor_id ], 
-						'total_due' 		=> $commission->total_due, 
+				if ( array_key_exists( $commission->vendor_id, $vendor_names) ){
+
+					$temp_array = array(
+						'user_login' 		=> $vendor_names[ $commission->vendor_id ],
+						'total_due' 		=> $commission->total_due + $commission->tax + $commission->total_shipping,
 						'tax'				=> $commission->tax,
-						'total_shipping'	=> $commission->total_shipping, 
-						'status'			=> $commission->status, 
-					); 
+						'total_shipping'	=> $commission->total_shipping,
+						'status'			=> $commission->status,
+					);
 
-					$totals[ $commission->vendor_id ] = $temp_array ; 
+					$totals[ $commission->vendor_id ] = $temp_array ;
 
 				}
 
-			} 
-			
-		} 
+			}
+
+		}
 
 		usort( $totals, function( $a, $b ) {
-			return strcmp( strtolower( $a[ 'user_login' ] ), strtolower( $b[ 'user_login' ] ) ); 
-		}); 
+			return strcmp( strtolower( $a[ 'user_login' ] ), strtolower( $b[ 'user_login' ] ) );
+		});
 
-		return $totals; 
+		return $totals;
 
-	} // calculate_totals() 
+	} // calculate_totals()
 
 }

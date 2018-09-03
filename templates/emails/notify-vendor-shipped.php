@@ -1,36 +1,41 @@
 <?php
 /**
- * Admin new order email
+ * DEPRECAITED - Admin new order email
+ *
  *
  * @author WooThemes
  * @package WooCommerce/Templates/Emails/HTML
  * @version 2.0.0
  */
-if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
+if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
+
+$order_date = $order->get_date_created();
+
+?>
 
 <?php do_action( 'woocommerce_email_header', $email_heading ); ?>
 
-<p><?php _e( 'A vendor has marked part of your order as shipped. The items that are shipped are as follows:', 'wcvendors' ); ?></p>
+<p><?php _e( 'A vendor has marked part of your order as shipped. The items that are shipped are as follows:', 'wc-vendors' ); ?></p>
 
 <?php do_action( 'woocommerce_email_before_order_table', $order, true ); ?>
 
-<h2><?php printf( __( 'Order: %s', 'wcvendors'), $order->get_order_number() ); ?> (<?php printf( '<time datetime="%s">%s</time>', date_i18n( 'c', strtotime( $order->order_date ) ), date_i18n( woocommerce_date_format(), strtotime( $order->order_date ) ) ); ?>)</h2>
+<h2><?php printf( __( 'Order: %s', 'wc-vendors'), $order->get_order_number() ); ?> (<?php printf( '<time datetime="%s">%s</time>', date_i18n( 'c', strtotime( $order_date ) ), date_i18n( wc_date_format(), strtotime( $order_date ) ) ); ?>)</h2>
 
 <table cellspacing="0" cellpadding="6" style="width: 100%; border: 1px solid #eee;" border="1" bordercolor="#eee">
 	<thead>
 		<tr>
-			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Product', 'wcvendors' ); ?></th>
-			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Quantity', 'wcvendors' ); ?></th>
-			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Price', 'wcvendors' ); ?></th>
+			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Product', 'wc-vendors' ); ?></th>
+			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Quantity', 'wc-vendors' ); ?></th>
+			<th scope="col" style="text-align:left; border: 1px solid #eee;"><?php _e( 'Price', 'wc-vendors' ); ?></th>
 		</tr>
 	</thead>
 	<tbody>
-		<?php echo $order->email_order_items_table( array(
-			'show_sku'      => false,
+		<?php echo wc_get_email_order_items( $order, array(
+			'show_sku'      => true,
 			'show_image'    => false,
 			'image_size'    => array( 32, 32 ),
 			'plain_text'    => false,
-			'sent_to_admin' => false
+			'sent_to_admin' => false,
 		) ); ?>
 	</tbody>
 	<tfoot>
@@ -53,13 +58,13 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly ?>
 
 <?php do_action( 'woocommerce_email_order_meta', $order, true ); ?>
 
-<h2><?php _e( 'Customer details', 'wcvendors' ); ?></h2>
+<h2><?php _e( 'Customer details', 'wc-vendors' ); ?></h2>
 
-<?php if ( $order->billing_email ) : ?>
-	<p><strong><?php _e( 'Email:', 'wcvendors' ); ?></strong> <?php echo $order->billing_email; ?></p>
+<?php if ( $order->get_billing_email() ) : ?>
+	<p><strong><?php _e( 'Email:', 'wc-vendors' ); ?></strong> <?php echo $order->get_billing_email(); ?></p>
 <?php endif; ?>
-<?php if ( $order->billing_phone ) : ?>
-	<p><strong><?php _e( 'Tel:', 'wcvendors' ); ?></strong> <?php echo $order->billing_phone; ?></p>
+<?php if ( $order->get_billing_phone() ) : ?>
+	<p><strong><?php _e( 'Tel:', 'wc-vendors' ); ?></strong> <?php echo $order->get_billing_phone(); ?></p>
 <?php endif; ?>
 
 <?php wc_get_template( 'emails/email-addresses.php', array( 'order' => $order ) ); ?>
